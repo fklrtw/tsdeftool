@@ -1,0 +1,48 @@
+{
+  "compilerOptions": {
+    "module": "esnext"
+  },
+  "exports": {
+    "./main": "./main.ts"
+  },
+  "format": {
+    "bracePosition": "nextLine",
+    "indentWidth": 2,
+    "lineWidth": 80,
+    "newLineKind": "lf",
+    "nextControlFlowPosition": "nextLine",
+    "semiColons": true,
+    "operatorPosition": "nextLine",
+    "proseWrap": "always",
+    "quoteProps": "asNeeded",
+    "singleBodyPositioN": "nextLine",
+    "singleQuotes": true,
+    "spaceAround": true,
+    "spaceSurroundingProperties": true,
+    "trailingCommas": "always",
+    "typeLiteral.separatorKind": "semiColon",
+    "useTabs": false,
+    "useBraces": "always"
+  },
+  "imports": {
+    "@cliffy/command": "jsr:@cliffy/command@1.0.0",
+    "@std/path": "jsr:@std/path@1.1.4",
+    "@std/text": "jsr:@std/text@^1.0.17"
+  },
+  "lint": {
+    "rules": {
+      "tags": [
+        "recommended"
+      ]
+    }
+  },
+  "minimumDependencyAge": "P7D",
+  "name": "@fklrtw/trucksim-deftool",
+  "permissions": {
+    "default": {
+      "read": true,
+      "write": true
+    }
+  },
+  "version": "0.0.0"
+}
