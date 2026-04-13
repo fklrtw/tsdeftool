@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Release Please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          target-branch: main
+
+      - name: Checkout code
+        if: ${{ steps.release.outputs.release_created }}
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        if: ${{ steps.release.outputs.release_created }}
+        uses: denoland/setup-deno@v2
+
+      - name: Publish to JSR
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          # Publishes the package to JSR using the configuration in deno.json
+          deno publish
+
+      - name: Compile for Linux
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          # Compiles the TypeScript file into a standalone Linux executable
+          # Add any required permission flags (like -A or --allow-read) if necessary
+          deno compile --target x86_64-unknown-linux-gnu --output tsdeftool-linux main.ts
+
+      - name: Compile for Windows
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          # Compiles the TypeScript file into a standalone Windows executable
+          deno compile --target x86_64-pc-windows-msvc --output tsdeftool-windows.exe main.ts
+
+      - name: Upload Release Assets
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Attaches the compiled binaries to the GitHub Release created by Release Please
+          gh release upload ${{ steps.release.outputs.tag_name }} tsdeftool-linux tsdeftool-windows.exe
