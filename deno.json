@@ -37,7 +37,7 @@
     }
   },
   "minimumDependencyAge": "P7D",
-  "name": "@fklrtw/trucksim-deftool",
+  "name": "@fklrtw/tsdeftool",
   "permissions": {
     "default": {
       "read": true,
