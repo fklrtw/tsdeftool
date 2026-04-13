@@ -1,0 +1,45 @@
+name: Build, Release, and Publish Deno App
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-release-publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Publish to JSR
+        run: |
+          deno publish
+
+      - name: Compile for Linux
+        run: |
+          deno compile -P x86_64-unknown-linux-gnu --output ${{ github.event.repository.name }}-linux main.ts
+
+      - name: Compile for Windows
+        run: |
+          deno compile -P --target x86_64-pc-windows-msvc --output ${{ github.event.repository.name }}-windows.exe main.ts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ github.event.repository.name }}-linux
+            ${{ github.event.repository.name }}-windows.exe
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
