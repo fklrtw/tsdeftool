@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.0](https://github.com/fklrtw/tsdeftool/compare/v0.0.3...v0.1.0) (2026-04-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* replace with Go implementation
+
+### Features
+
+* replace with Go implementation ([7173081](https://github.com/fklrtw/tsdeftool/commit/7173081796ad6ec0df5b004d0ca670f4c8bd5631))
+
 ## [0.0.3](https://github.com/fklrtw/tsdeftool/compare/v0.0.2...v0.0.3) (2026-04-13)
 
 
