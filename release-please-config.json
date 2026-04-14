@@ -1,16 +1,9 @@
 {
   "packages": {
     ".": {
-      "release-type": "simple",
+      "release-type": "go",
       "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true,
-      "extra-files": [
-        {
-          "type": "json",
-          "path": "deno.json",
-          "jsonpath": "$.version"
-        }
-      ]
+      "bump-patch-for-minor-pre-major": true
     }
   }
 }

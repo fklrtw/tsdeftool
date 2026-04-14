@@ -24,28 +24,23 @@ jobs:
         if: ${{ steps.release.outputs.release_created }}
         uses: actions/checkout@v4
 
-      - name: Setup Deno
+      - name: Setup Go
         if: ${{ steps.release.outputs.release_created }}
-        uses: denoland/setup-deno@v2
-
-      - name: Publish to JSR
-        if: ${{ steps.release.outputs.release_created }}
-        run: |
-          # Publishes the package to JSR using the configuration in deno.json
-          deno publish
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
 
       - name: Compile for Linux
         if: ${{ steps.release.outputs.release_created }}
         run: |
-          # Compiles the TypeScript file into a standalone Linux executable
-          # Add any required permission flags (like -A or --allow-read) if necessary
-          deno compile --target x86_64-unknown-linux-gnu --output tsdeftool-linux main.ts
+          # Compiles the Go source into a standalone Linux executable
+          GOOS=linux GOARCH=amd64 go build -o tsdeftool-linux main.go
 
       - name: Compile for Windows
         if: ${{ steps.release.outputs.release_created }}
         run: |
-          # Compiles the TypeScript file into a standalone Windows executable
-          deno compile --target x86_64-pc-windows-msvc --output tsdeftool-windows.exe main.ts
+          # Compiles the Go source into a standalone Windows executable
+          GOOS=windows GOARCH=amd64 go build -o tsdeftool-windows.exe main.go
 
       - name: Upload Release Assets
         if: ${{ steps.release.outputs.release_created }}
