@@ -10,6 +10,10 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,5 +27,15 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
+      - name: Install go-junit-report
+        run: go install github.com/jstemmer/go-junit-report/v2@latest
+
       - name: Run tests
-        run: go test -v ./...
+        run: |
+          go test -v ./... 2>&1 | go-junit-report > report.xml
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: "report.xml"
