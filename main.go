@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-// PrettyHandler is a custom slog.Handler that formats logs for the CLI.
+// PrettyHandler is a custom slog.Handler that formats logs for the CLI
 type PrettyHandler struct {
 	opts slog.HandlerOptions
 }
@@ -53,55 +53,70 @@ func (h *PrettyHandler) WithGroup(name string) slog.Handler {
 	return h
 }
 
-// Vehicle represents a vehicle (trailer or truck) found in the source files.
+// vehicle represents a vehicle (trailer or truck) found in the source files
 type Vehicle struct {
 	FileName string // The source file path where the vehicle was found.
 	Name     string // The internal name/identifier of the vehicle.
 }
 
-// Company represents a company and its associated lists of trailers and trucks.
+// company represents a company and its associated lists of trailers and trucks
 type Company struct {
 	Trailers []Vehicle
 	Trucks   []Vehicle
 }
 
-// VehicleType is a custom string type representing either "trailer" or "truck".
+// VehicleType is a custom string type representing either "trailer" or "truck"
 type VehicleType string
 
 const (
-	// Trailer represents a trailer vehicle type.
+	// trailer represents a trailer vehicle type
 	Trailer VehicleType = "trailer"
-	// Truck represents a truck vehicle type.
+	// truck represents a truck vehicle type
 	Truck VehicleType = "truck"
 )
 
-// vehicleTypes lists the supported vehicle types for iteration.
+// vehicleTypes lists the supported vehicle types for iteration
 var vehicleTypes = []VehicleType{Trailer, Truck}
 
-// vehicleRegex is used to identify vehicle or trailer definitions in source files.
-// It matches lines starting with 'traffic_vehicle' or 'traffic_trailer'.
+// vehicleRegex is used to identify vehicle or trailer definitions in source files
+// it matches lines starting with 'traffic_vehicle' or 'traffic_trailer'
 var vehicleRegex = regexp.MustCompile(`^traffic_(vehicle|trailer)\s+:\s+traffic\.(\S+)(\s+\/\/\s+(\S+))?`)
 
+// main entrypoint - essentially just a wrapper around the run function
 func main() {
-	// CLI Flags
-	sourceDir := flag.String("source-directory", ".", "Source directory/where the source files are")
-	destDir := flag.String("destination-directory", "output", "Destination directory/where the generated files should go")
-	maxDistance := flag.Int("maximum-levenshtein-distance", 2, "(Maximum) Levenshtein distance of two company names to be considered a typo")
-	versionFlag := flag.Bool("version", false, "Print version and exit")
-	logLevelStr := flag.String("log-level", "warn", "Log level (debug, info, warn, error)")
+	if err := run(os.Args[1:]); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+}
 
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] [command]\n\n", os.Args[0])
+// run the program
+func run(args []string) error {
+	// init flags parsing
+	flags := flag.NewFlagSet("tsdeftool", flag.ContinueOnError)
+
+	// parse flags
+	sourceDir := flags.String("source-directory", ".", "Source directory/where the source files are")
+	destDir := flags.String("destination-directory", "output", "Destination directory/where the generated files should go")
+	maxDistance := flags.Int("maximum-levenshtein-distance", 2, "(Maximum) Levenshtein distance of two company names to be considered a typo")
+	versionFlag := flags.Bool("version", false, "Print version and exit")
+	logLevelStr := flags.String("log-level", "warn", "Log level (debug, info, warn, error)")
+
+	// define help output
+	flags.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: tsdeftool [options] [command]\n\n")
 		fmt.Fprintf(os.Stderr, "Options:\n")
-		flag.PrintDefaults()
+		flags.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\nCommands:\n")
 		fmt.Fprintf(os.Stderr, "  help     Print this help message\n")
 		fmt.Fprintf(os.Stderr, "  version  Print version and exit\n")
 	}
 
-	flag.Parse()
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
 
-	// Configure slog based on the log-level flag
+	// configure slog based on the log-level flag
 	var level slog.Level
 	switch strings.ToLower(*logLevelStr) {
 	case "debug":
@@ -121,42 +136,39 @@ func main() {
 	})
 	slog.SetDefault(logger)
 
-	if *versionFlag || (flag.NArg() > 0 && flag.Arg(0) == "version") {
+	if *versionFlag || (flags.NArg() > 0 && flags.Arg(0) == "version") {
 		fmt.Println("0.0.2")
-		return
+		return nil
 	}
 
-	if flag.NArg() > 0 && flag.Arg(0) == "help" {
-		flag.Usage()
-		return
+	if flags.NArg() > 0 && flags.Arg(0) == "help" {
+		flags.Usage()
+		return nil
 	}
 
 	start := time.Now()
 
-	// Ensure source and destination directories exist
+	// ensure source and destination directories exist
 	err := assertDirectory(sourceDir, "source", true)
 	if err != nil {
-		slog.Error("Directory assertion failed", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("directory assertion failed: %w", err)
 	}
 
 	err = assertDirectory(destDir, "destination", true)
 	if err != nil {
-		slog.Error("Directory assertion failed", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("directory assertion failed: %w", err)
 	}
 
 	companyMap := make(map[string]*Company)
 
-	// Step 1: Read all source files and populate the company map
+	// step 1: read all source files and populate the company map
 	fmt.Printf("[LOG] Recursively reading source files in '%s'...\n", *sourceDir)
 	err = readSourceFiles(*sourceDir, companyMap)
 	if err != nil {
-		slog.Error("Failed to read source files", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to read source files: %w", err)
 	}
 
-	// Step 2: Sort company names for deterministic output
+	// step 2: sort company names for deterministic output
 	fmt.Printf("[LOG] Processing %d companies, writing to '%s'...\n", len(companyMap), *destDir)
 	companyNames := make([]string, 0, len(companyMap))
 	for name := range companyMap {
@@ -164,7 +176,7 @@ func main() {
 	}
 	sort.Strings(companyNames)
 
-	// Step 3: Generate company-specific .sii files and prepare glossary
+	// step 3: generate company-specific .sii files and prepare glossary
 	glossary := [][]string{
 		{"company", "type", "vehicle", "file"},
 	}
@@ -190,7 +202,7 @@ func main() {
 					continue
 				}
 
-				// Sort vehicles by name for glossary consistency
+				// sort vehicles by name for glossary consistency
 				sort.Slice(vehicles, func(i, j int) bool {
 					return vehicles[i].Name < vehicles[j].Name
 				})
@@ -202,7 +214,7 @@ func main() {
 		}
 	}
 
-	// Step 4: Detect potential typos in company names using Levenshtein distance
+	// step 4: detect potential typos in company names using Levenshtein distance
 	companyTypos := [][]string{
 		{"company A", "company B", "distance"},
 	}
@@ -222,7 +234,7 @@ func main() {
 		}
 	}
 
-	// Step 5: Write metadata files
+	// step 5: write metadata files
 	err = writeCSV(filepath.Join(*destDir, "_typos.csv"), companyTypos)
 	if err != nil {
 		slog.Error("Failed to write typos CSV", "error", err)
@@ -234,9 +246,11 @@ func main() {
 	}
 
 	fmt.Printf("ok: %v\n", time.Since(start))
+
+	return nil
 }
 
-// assertDirectory checks if a directory exists and optionally creates it.
+// assertDirectory checks if a directory exists and optionally creates it
 func assertDirectory(directory *string, identifier string, create bool) error {
 	info, err := os.Lstat(*directory)
 	if err != nil {
@@ -258,7 +272,7 @@ func assertDirectory(directory *string, identifier string, create bool) error {
 	return nil
 }
 
-// readSourceFiles recursively reads all .sui and .sii files in a directory and populates companyMap.
+// readSourceFiles recursively reads all .sui and .sii files in a directory and populates companyMap
 func readSourceFiles(directory string, companyMap map[string]*Company) error {
 	entries, err := os.ReadDir(directory)
 	if err != nil {
@@ -339,7 +353,7 @@ func readSourceFiles(directory string, companyMap map[string]*Company) error {
 	return nil
 }
 
-// writeCompanyFile generates a .sii file containing country_traffic_info for a specific company and vehicle type.
+// writeCompanyFile generates a .sii file containing country_traffic_info for a specific company and vehicle type
 func writeCompanyFile(companyName string, vehicleType string, vehicles []string, destinationDirectory string) error {
 	fileName := fmt.Sprintf("traffic.%s_%s.sii", vehicleType, companyName)
 
@@ -371,7 +385,7 @@ func writeCompanyFile(companyName string, vehicleType string, vehicles []string,
 	return os.WriteFile(filepath.Join(destinationDirectory, fileName), []byte(sb.String()), 0644)
 }
 
-// writeCSV writes a 2D string slice to a file in semicolon-separated CSV format.
+// writeCSV writes a 2D string slice to a file in semicolon-separated CSV format
 func writeCSV(path string, rows [][]string) error {
 	var sb strings.Builder
 	for i, row := range rows {
@@ -383,7 +397,7 @@ func writeCSV(path string, rows [][]string) error {
 	return os.WriteFile(path, []byte(sb.String()), 0644)
 }
 
-// levenshteinDistance calculates the Levenshtein distance between two strings to identify similar company names.
+// levenshteinDistance calculates the Levenshtein distance between two strings to identify similar company names
 func levenshteinDistance(s1, s2 string) int {
 	r1 := []rune(s1)
 	r2 := []rune(s2)
@@ -411,7 +425,7 @@ func levenshteinDistance(s1, s2 string) int {
 	return d[m][n]
 }
 
-// min returns the minimum value from a list of integers.
+// min returns the minimum value from a list of integers
 func min(vals ...int) int {
 	m := vals[0]
 	for _, v := range vals[1:] {
