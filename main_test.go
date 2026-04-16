@@ -57,7 +57,9 @@ func TestAssertDirectory(t *testing.T) {
 
 	// Case 1: Directory already exists
 	path1 := filepath.Join(tmpDir, "shadow_realm")
-	os.Mkdir(path1, 0755)
+	if err := os.Mkdir(path1, 0755); err != nil {
+		t.Fatal(err)
+	}
 	p1 := path1
 	err := assertDirectory(&p1, "test1", false)
 	if err != nil {
@@ -85,7 +87,9 @@ func TestAssertDirectory(t *testing.T) {
 
 	// Case 4: Not a directory
 	path4 := filepath.Join(tmpDir, "magic_scroll.txt")
-	os.WriteFile(path4, []byte("abracadabra"), 0644)
+	if err := os.WriteFile(path4, []byte("abracadabra"), 0644); err != nil {
+		t.Fatal(err)
+	}
 	p4 := path4
 	err = assertDirectory(&p4, "test4", false)
 	if err == nil {
@@ -192,8 +196,12 @@ traffic_trailer : traffic.supply_wagon // citadel_guard`
 		f2 := `traffic_vehicle : traffic.pegasus_knight // citadel_guard
 traffic_trailer : traffic.ballista // citadel_guard`
 
-		os.WriteFile(filepath.Join(tmpDir, "f1.sii"), []byte(f1), 0644)
-		os.WriteFile(filepath.Join(tmpDir, "f2.sii"), []byte(f2), 0644)
+		if err := os.WriteFile(filepath.Join(tmpDir, "f1.sii"), []byte(f1), 0644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(tmpDir, "f2.sii"), []byte(f2), 0644); err != nil {
+			t.Fatal(err)
+		}
 
 		companyMap := make(map[string]*Company)
 		if err := readSourceFiles(tmpDir, companyMap); err != nil {
@@ -209,11 +217,17 @@ traffic_trailer : traffic.ballista // citadel_guard`
 		f1 := `traffic_vehicle : traffic.cursed_spirit // graveyard_shift`
 		f2 := `traffic_vehicle : traffic.cursed_spirit // graveyard_shift`
 
-		os.WriteFile(filepath.Join(tmpDir, "f1.sii"), []byte(f1), 0644)
-		os.WriteFile(filepath.Join(tmpDir, "f2.sii"), []byte(f2), 0644)
+		if err := os.WriteFile(filepath.Join(tmpDir, "f1.sii"), []byte(f1), 0644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(tmpDir, "f2.sii"), []byte(f2), 0644); err != nil {
+			t.Fatal(err)
+		}
 
 		companyMap := make(map[string]*Company)
-		readSourceFiles(tmpDir, companyMap)
+		if err := readSourceFiles(tmpDir, companyMap); err != nil {
+			t.Fatal(err)
+		}
 
 		found := false
 		for _, company := range companyMap {

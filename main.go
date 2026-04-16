@@ -343,7 +343,10 @@ func readSourceFiles(directory string, companyMap map[string]*Company) error {
 				companyMap[company].Trailers = append(companyMap[company].Trailers, vehicle)
 			}
 		}
-		file.Close()
+
+		if closeErr := file.Close(); closeErr != nil {
+			slog.Warn("Could not close file", "path", path, "error", closeErr)
+		}
 
 		if err := scanner.Err(); err != nil {
 			slog.Warn("Error scanning file", "path", path, "error", err)
@@ -373,8 +376,8 @@ func writeCompanyFile(companyName string, vehicleType string, vehicles []string,
 			continue
 		}
 
-		sb.WriteString(fmt.Sprintf("\ncountry_traffic_info : .country.info.traffic.%s {\n", vehicle))
-		sb.WriteString(fmt.Sprintf("    object: traffic.%s\n", vehicle))
+		fmt.Fprintf(&sb, "\ncountry_traffic_info : .country.info.traffic.%s {\n", vehicle)
+		fmt.Fprintf(&sb, "    object: traffic.%s\n", vehicle)
 		sb.WriteString("    spawn_frequency : 0.00\n}\n")
 
 		lastVehicle = vehicle
