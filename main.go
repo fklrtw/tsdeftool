@@ -134,13 +134,13 @@ func main() {
 	start := time.Now()
 
 	// Ensure source and destination directories exist
-	err := assertDirectory(*sourceDir, "source", true)
+	err := assertDirectory(sourceDir, "source", true)
 	if err != nil {
 		slog.Error("Directory assertion failed", "error", err)
 		os.Exit(1)
 	}
 
-	err = assertDirectory(*destDir, "destination", true)
+	err = assertDirectory(destDir, "destination", true)
 	if err != nil {
 		slog.Error("Directory assertion failed", "error", err)
 		os.Exit(1)
@@ -149,7 +149,7 @@ func main() {
 	companyMap := make(map[string]*Company)
 
 	// Step 1: Read all source files and populate the company map
-	fmt.Printf("[INFO] Iterating over source files in '%s'...\n", *sourceDir)
+	fmt.Printf("[LOG] Recursively reading source files in '%s'...\n", *sourceDir)
 	err = readSourceFiles(*sourceDir, companyMap)
 	if err != nil {
 		slog.Error("Failed to read source files", "error", err)
@@ -157,7 +157,7 @@ func main() {
 	}
 
 	// Step 2: Sort company names for deterministic output
-	fmt.Printf("[INFO] Processing %d companies, writing to '%s'...\n", len(companyMap), *destDir)
+	fmt.Printf("[LOG] Processing %d companies, writing to '%s'...\n", len(companyMap), *destDir)
 	companyNames := make([]string, 0, len(companyMap))
 	for name := range companyMap {
 		companyNames = append(companyNames, name)
@@ -237,19 +237,23 @@ func main() {
 }
 
 // assertDirectory checks if a directory exists and optionally creates it.
-func assertDirectory(directory string, identifier string, create bool) error {
-	info, err := os.Lstat(directory)
+func assertDirectory(directory *string, identifier string, create bool) error {
+	info, err := os.Lstat(*directory)
 	if err != nil {
 		if os.IsNotExist(err) && create {
-			slog.Info("Creating directory", "identifier", identifier, "path", directory)
-			return os.MkdirAll(directory, 0755)
+			slog.Info("Creating directory", "identifier", identifier, "path", *directory)
+			return os.MkdirAll(*directory, 0755)
 		}
-		return fmt.Errorf("provided %s directory '%s' does not exist", identifier, directory)
+		return fmt.Errorf("provided %s directory '%s' does not exist", identifier, *directory)
 	}
 
 	if !info.IsDir() {
-		return fmt.Errorf("provided %s directory '%s' is not a directory", identifier, directory)
+		return fmt.Errorf("provided %s directory '%s' is not a directory", identifier, *directory)
 	}
+
+	absPath, _ := filepath.Abs(*directory)
+
+	*directory = absPath
 
 	return nil
 }
