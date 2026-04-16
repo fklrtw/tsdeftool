@@ -350,10 +350,20 @@ func writeCompanyFile(companyName string, vehicleType string, vehicles []string,
 
 	slices.Sort(vehicles)
 
+	var lastVehicle string
+
 	for _, vehicle := range vehicles {
+		if lastVehicle == vehicle {
+			slog.Debug("Skipping duplicate vehicle", "vehicle", vehicle)
+
+			continue
+		}
+
 		sb.WriteString(fmt.Sprintf("\ncountry_traffic_info : .country.info.traffic.%s {\n", vehicle))
 		sb.WriteString(fmt.Sprintf("    object: traffic.%s\n", vehicle))
 		sb.WriteString("    spawn_frequency : 0.00\n}\n")
+
+		lastVehicle = vehicle
 	}
 
 	sb.WriteString("}\n")
