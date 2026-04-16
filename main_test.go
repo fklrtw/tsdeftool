@@ -232,6 +232,48 @@ traffic_trailer : traffic.ballista // citadel_guard`
 	})
 }
 
+func TestRunIntegration(t *testing.T) {
+	tmpSource := t.TempDir()
+	tmpDest := t.TempDir()
+
+	// Create some dummy data in source
+	siiContent := `traffic_vehicle : traffic.spectral_steed // mystic_guild`
+	err := os.WriteFile(filepath.Join(tmpSource, "data.sii"), []byte(siiContent), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Test successful run
+	args := []string{
+		"-source-directory", tmpSource,
+		"-destination-directory", tmpDest,
+		"-log-level", "debug",
+	}
+
+	err = run(args)
+	if err != nil {
+		t.Errorf("run() failed: %v", err)
+	}
+
+	// Verify output
+	expectedFile := filepath.Join(tmpDest, "traffic.truck_mystic_guild.sii")
+	if _, err := os.Stat(expectedFile); os.IsNotExist(err) {
+		t.Errorf("expected output file %s not found", expectedFile)
+	}
+
+	// Test help command
+	err = run([]string{"help"})
+	if err != nil {
+		t.Errorf("run(help) failed: %v", err)
+	}
+
+	// Test version command
+	err = run([]string{"version"})
+	if err != nil {
+		t.Errorf("run(version) failed: %v", err)
+	}
+}
+
 // checkDuplicates is a helper to verify no duplicates exist in the map
 func checkDuplicates(t *testing.T, companyMap map[string]*Company) {
 	for companyName, company := range companyMap {
