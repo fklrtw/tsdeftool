@@ -42,10 +42,20 @@ jobs:
           # Compiles the Go source into a standalone Windows executable
           GOOS=windows GOARCH=amd64 go build -o tsdeftool-windows.exe main.go
 
+      - name: Compile for macOS (Intel)
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          GOOS=darwin GOARCH=amd64 go build -o tsdeftool-darwin-amd64 main.go
+
+      - name: Compile for macOS (Apple Silicon)
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          GOOS=darwin GOARCH=arm64 go build -o tsdeftool-darwin-arm64 main.go
+
       - name: Upload Release Assets
         if: ${{ steps.release.outputs.release_created }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Attaches the compiled binaries to the GitHub Release created by Release Please
-          gh release upload ${{ steps.release.outputs.tag_name }} tsdeftool-linux tsdeftool-windows.exe
+          gh release upload ${{ steps.release.outputs.tag_name }} tsdeftool-linux tsdeftool-windows.exe tsdeftool-darwin-amd64 tsdeftool-darwin-arm64
