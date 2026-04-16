@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.1](https://github.com/fklrtw/tsdeftool/compare/v0.1.0...v0.1.1) (2026-04-16)
+
+
+### Features
+
+* make paths absolute for more readable log ([abd5c84](https://github.com/fklrtw/tsdeftool/commit/abd5c84836549eafc079548097cdd0aebab40dae))
+
+
+### Bug Fixes
+
+* skip duplicate vehicles for the same company ([8fb9407](https://github.com/fklrtw/tsdeftool/commit/8fb940727c5ed8355cf5ea0ff1fb1a49d6eb9677))
+
 ## [0.1.0](https://github.com/fklrtw/tsdeftool/compare/v0.0.3...v0.1.0) (2026-04-14)
 
 
