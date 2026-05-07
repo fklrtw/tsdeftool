@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/fklrtw/tsdeftool/compare/v0.1.2...v0.1.3) (2026-05-07)
+
+
+### Features
+
+* write log to local file for debugging ([0b17c00](https://github.com/fklrtw/tsdeftool/commit/0b17c003b433956828f15140a90c425186e4d034))
+
 ## [0.1.2](https://github.com/fklrtw/tsdeftool/compare/v0.1.1...v0.1.2) (2026-04-16)
 
 
