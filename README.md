@@ -20,7 +20,7 @@ This tool:
 The easiest way to use the tool is to download the latest pre-built executable for your operating system.
 
 ### Download
-You can find the latest releases for Windows and Linux here:
+You can find the latest releases for Windows, Linux, and macOS here:
 **[👉 Download Latest Releases](https://github.com/fklrtw/tsdeftool/releases)**
 
 ### Running the tool
@@ -34,6 +34,11 @@ Run the executable from your terminal or command prompt:
 **Linux:**
 ```bash
 ./tsdeftool-linux [options]
+```
+
+**macOS:**
+```bash
+./tsdeftool-darwin [options]
 ```
 
 ### Options
@@ -50,6 +55,12 @@ To parse files in a `defs` folder and output to `generated_defs` with high verbo
 ./tsdeftool-linux -source-directory ./defs -destination-directory ./generated_defs -log-level debug
 ```
 
+### Logging
+Each time the tool runs, it generates (or appends to) a `tsdeftool.log` file in the current working directory.
+- **CLI Output**: Controlled by the `-log-level` flag (defaults to `info`).
+- **Log File**: Always contains the complete, detailed output (at `debug` level) regardless of the `-log-level` flag.
+- **Purpose**: This file is useful for troubleshooting issues or verifying the parsing process in detail.
+
 ## Building from Source
 
 If you prefer to build the tool yourself, you will need **Go 1.21** or later installed.
@@ -63,6 +74,11 @@ GOOS=linux GOARCH=amd64 go build -o tsdeftool-linux main.go
 **Windows:**
 ```bash
 GOOS=windows GOARCH=amd64 go build -o tsdeftool-windows.exe main.go
+```
+
+**macOS:**
+```bash
+GOOS=darwin GOARCH=amd64 go build -o tsdeftool-darwin main.go
 ```
 
 ## Internal Formats

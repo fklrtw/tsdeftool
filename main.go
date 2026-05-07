@@ -53,6 +53,45 @@ func (h *PrettyHandler) WithGroup(name string) slog.Handler {
 	return h
 }
 
+// MultiHandler is a slog.Handler that dispatches logs to multiple handlers
+type MultiHandler struct {
+	handlers []slog.Handler
+}
+
+func (h *MultiHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	for _, l := range h.handlers {
+		if l.Enabled(ctx, level) {
+			return true
+		}
+	}
+	return false
+}
+
+func (h *MultiHandler) Handle(ctx context.Context, r slog.Record) error {
+	for _, l := range h.handlers {
+		if l.Enabled(ctx, r.Level) {
+			_ = l.Handle(ctx, r)
+		}
+	}
+	return nil
+}
+
+func (h *MultiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	newHandlers := make([]slog.Handler, len(h.handlers))
+	for i, h := range h.handlers {
+		newHandlers[i] = h.WithAttrs(attrs)
+	}
+	return &MultiHandler{handlers: newHandlers}
+}
+
+func (h *MultiHandler) WithGroup(name string) slog.Handler {
+	newHandlers := make([]slog.Handler, len(h.handlers))
+	for i, h := range h.handlers {
+		newHandlers[i] = h.WithGroup(name)
+	}
+	return &MultiHandler{handlers: newHandlers}
+}
+
 // vehicle represents a vehicle (trailer or truck) found in the source files
 type Vehicle struct {
 	FileName string // The source file path where the vehicle was found.
@@ -85,6 +124,7 @@ var vehicleRegex = regexp.MustCompile(`^traffic_(vehicle|trailer)\s+:\s+traffic\
 // main entrypoint - essentially just a wrapper around the run function
 func main() {
 	if err := run(os.Args[1:]); err != nil {
+		slog.Error("Application failed", "error", err)
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
@@ -92,6 +132,28 @@ func main() {
 
 // run the program
 func run(args []string) error {
+	// 1. Initial setup of logging to a local file (default level: Debug for file)
+	// We do this before flag parsing so we can log parsing errors.
+	logFilePath := "tsdeftool.log"
+	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		return fmt.Errorf("failed to open log file: %w", err)
+	}
+	defer logFile.Close()
+
+	// initial logger with default levels
+	logger := slog.New(&MultiHandler{
+		handlers: []slog.Handler{
+			&PrettyHandler{
+				opts: slog.HandlerOptions{Level: slog.LevelWarn},
+			},
+			slog.NewTextHandler(logFile, &slog.HandlerOptions{Level: slog.LevelDebug}),
+		},
+	})
+	slog.SetDefault(logger)
+
+	fmt.Printf("[LOG] Complete log is being written to: %s\n", logFilePath)
+
 	// init flags parsing
 	flags := flag.NewFlagSet("tsdeftool", flag.ContinueOnError)
 
@@ -112,11 +174,11 @@ func run(args []string) error {
 		fmt.Fprintf(os.Stderr, "  version  Print version and exit\n")
 	}
 
-	if err := flags.Parse(args); err != nil {
+	if err = flags.Parse(args); err != nil {
 		return err
 	}
 
-	// configure slog based on the log-level flag
+	// 2. Re-configure slog based on the parsed log-level flag
 	var level slog.Level
 	switch strings.ToLower(*logLevelStr) {
 	case "debug":
@@ -131,10 +193,18 @@ func run(args []string) error {
 		level = slog.LevelWarn
 	}
 
-	logger := slog.New(&PrettyHandler{
-		opts: slog.HandlerOptions{Level: level},
+	// Re-initialize with the correct level for PrettyHandler
+	logger = slog.New(&MultiHandler{
+		handlers: []slog.Handler{
+			&PrettyHandler{
+				opts: slog.HandlerOptions{Level: level},
+			},
+			slog.NewTextHandler(logFile, &slog.HandlerOptions{Level: slog.LevelDebug}),
+		},
 	})
 	slog.SetDefault(logger)
+
+	slog.Debug("Logger re-configured with user flags", "level", level)
 
 	if *versionFlag || (flags.NArg() > 0 && flags.Arg(0) == "version") {
 		fmt.Println("0.0.2")
@@ -149,7 +219,7 @@ func run(args []string) error {
 	start := time.Now()
 
 	// ensure source and destination directories exist
-	err := assertDirectory(sourceDir, "source", true)
+	err = assertDirectory(sourceDir, "source", true)
 	if err != nil {
 		return fmt.Errorf("directory assertion failed: %w", err)
 	}
