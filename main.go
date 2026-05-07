@@ -139,7 +139,11 @@ func run(args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open log file: %w", err)
 	}
-	defer logFile.Close()
+	defer func() {
+		if cerr := logFile.Close(); cerr != nil {
+			slog.Error("Failed to close log file", "error", cerr)
+		}
+	}()
 
 	// initial logger with default levels
 	logger := slog.New(&MultiHandler{
